@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>채팅방 목록</title>
+
+<!-- CSS 스타일 추가 -->
+<style>
+body {
+	font-family: Arial, sans-serif;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+	margin: 0;
+}
+
+.container {
+	width: 80%;
+	max-width: 1000px;
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	padding: 20px;
+}
+
+h2 {
+	text-align: center;
+	margin-bottom: 20px; /* 제목과 테이블 사이의 간격 */
+}
+
+table {
+	width: 900px;
+	border-collapse: collapse;
+	margion: 0 auto;
+}
+
+th, td {
+	border: 1px solid #dddddd;
+	padding: 10px;
+	text-align: left;
+}
+
+th {
+	background-color: #f2f2f2;
+}
+
+button {
+	margin-top: 10px;
+	padding: 10px 20px;
+	font-size: 1em;
+	cursor: pointer;
+	background-color: #4CAF50;
+	color: white;
+	border: none;
+	border-radius: 4px;
+}
+
+button:hover {
+	background-color: #45a049;
+}
+
+button:active {
+	background-color: #3e8e41;
+}
+
+input[type=text] {
+	padding: 10px;
+	width: 200px;
+	border-radius: 4px;
+	border: 1px solid #ccc;
+}
+</style>
+
+<!-- JavaScript 함수 추가 -->
+<script type="text/javascript">
+	function createChatRoom() {
+		var roomTitle = document.getElementById("roomTitle").value;
+
+		if (roomTitle.trim() === "") {
+			alert("채팅방 제목을 입력해주세요.");
+			return;
+		}
+		window.location.href = "/room/new?roomTitle="
+			+ encodeURIComponent(roomTitle) + "&region=" + encodeURIComponent(document.getElementById("region").value);
+</script>
+</head>
+<body>
+
+	<div class="chat-container">
+		<h2>채팅방 목록</h2>
+
+		<!-- 채팅방 목록 출력 -->
+		<table>
+			<thead>
+				<tr>
+					<th>채팅방 ID</th>
+					<th>채팅방 제목</th>
+					<th>비밀번호</th>
+					<th>시간</th>
+					<th>지역</th>
+				</tr>
+			</thead>
+			<tbody>
+				<th:block th:if="${#lists.size(collection) > 0}">
+					<tr th:each="room : ${collection}">
+						<td><a th:href="@{/room(id=${room.id})}" th:text="${room.id}"></a></td>
+						<td><a th:href="@{/room(id=${room.id})}"
+							th:text="${room.roomTitle}"></a></td>
+						<td th:text="${room.passwd != null ? 'O' : 'X'}"></td>
+						<td
+							th:text="${#dates.format(room.regDate, 'yyyy-MM-dd HH:mm:ss')}"></td>
+						<td th:text="${room.region}"></td>
+					</tr>
+				</th:block>
+				<th:block th:unless="${#lists.size(collection) > 0}">
+					<tr>
+						<td colspan="3">현재 채팅방이 없습니다.</td>
+					</tr>
+				</th:block>
+			</tbody>
+		</table>
+		<!-- 새 채팅방 생성 입력 폼 -->
+		<div style="margin-top: 20px;">
+			<form action="/room/new" method="get">
+				<label for="roomTitle">채팅방 제목:</label> <input type="text"
+					id="roomTitle" name="roomTitle"> <select id="region"
+					name="region" th:value="${region}">
+					<option value="">-- 지역 선택 --</option>
+					<option value="Seoul">서울</option>
+					<option value="Busan">부산</option>
+					<option value="Incheon">인천</option>
+					<option value="Daegu">대구</option>
+				</select>
+				
+				<label for="passwd">비밀번호:</label>
+				<input type="passwd" id="passwd" name="passwd">
+				<button type="submit" onclick="createChatRoom()">채팅방 생성</button>
+			</form>
+		</div>
+	</div>
+</body>
+</html>

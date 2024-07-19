@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>대화방</title>
+<style>
+body {
+	font-family: Arial, sans-serif;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+	margin: 0;
+}
+
+.container {
+	width: 80%;
+	max-width: 1200px;
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	padding: 20px;
+	display: flex;
+}
+
+.chat-section {
+	flex: 2;
+	margin-left: 20px;
+}
+
+.participants-section {
+	flex: 1;
+	border-right: 1px solid #ccc;
+	padding-right: 20px;
+}
+
+h1 {
+	text-align: center;
+	margin-bottom: 20px;
+}
+
+#chatLog {
+	padding: 10px;
+	width: 100%;
+	height: 300px;
+	overflow-y: scroll;
+	border: 1px solid #ccc;
+	border-radius: 4px background-color: #f9f9f9;
+}
+
+#chatLog p {
+	margin: 5px 0;
+	padding: 5px 10px;
+	border-radius: 5px;
+}
+
+#chatLog .sent {
+	background-color: #DCF8C6;
+}
+
+textarea {
+	width: 100%; /* 전체 폭을 컨테이너의 폭에 맞게 설정 */
+	height: 100px;
+	padding: 10px;
+	border-radius: 4px;
+	border: 1px solid #ccc;
+	margin-bottom: 10px;
+	box-sizing: border-box;
+}
+
+input[type="button"] {
+	padding: 10px 20px;
+	font-size: 1em;
+	cursor: pointer;
+	background-color: #4CAF50;
+	color: white;
+	border: none;
+	border-radius: 4px;
+}
+
+input[type="button"]:hover {
+	background-color: #45a049;
+}
+
+input[type="button"]:active {
+	background-color: #3e8e41;
+}
+</style>
+<script type="text/javascript" th:inline="javascript">
+	window.onload = () => {
+		const websocket = new WebSocket("ws://localhost:9999/ws/multiRoom");
+		var roomId = [[${roomId}]];
+		
+		  function sendMessage() {
+		        var textarea = document.getElementById("textarea");
+		        var myMessage = textarea.value;
+		        if (myMessage.trim() !== "") {
+		            // 채팅 메시지 전송 함수, type으로 가입인지 메시지 전송인지 서버에 알려줌
+		            websocket.send(JSON.stringify({ chatRoomId: roomId, type: "SEND", message: myMessage }));
+		            textarea.value = ''; // 전송 후 텍스트 필드 비우기
+		        }
+		    }
+		  function updateParticipants() {
+		        fetch(`/room/${roomId}/participants`)
+		            .then(response => response.json())
+		            .then(participants => {
+		                const participantsDiv = document.getElementById("participants");
+		                participantsDiv.innerHTML = '<h3>참여자 목록</h3>';
+		                participants.forEach(participant => {
+		                    const p = document.createElement("p");
+		                    p.textContent = participant;
+		                    participantsDiv.appendChild(p);
+		                });
+		            });
+		  }
+
+		    document.querySelector("#btn_send").onclick = sendMessage;
+		    
+		    // Enter 키를 눌렀을 때 메시지 전송
+		    document.querySelector("#textarea").addEventListener("keydown", function (event) {
+		        if (event.key === "Enter" && !event.shiftKey) { // Shift + Enter를 제외한 Enter 키를 감지
+		            event.preventDefault(); // 기본 Enter 동작 방지 (줄바꿈 방지)
+		            sendMessage();
+		        }
+		    });
+		
+		websocket.onopen = function () {
+			//채팅방 접속시 제일먼저 보내는 메세지
+			websocket.send( JSON.stringify({chatRoomId: roomId, type: "JOIN", message : '님이 채팅에 입장하셨습니다'}) );
+			updateParticipants();
+		}   
+		
+
+		//메세지 받는 이벤트 함수
+		websocket.onmessage = function (e) {
+	        var content = JSON.parse(e.data);
+	        var message = content.message;
+	        var type = content.type;
+	        var chatLog = document.getElementById("chatLog");
+	        
+	        // 새로운 <p> 엘리먼트 생성
+	        var newMessage = document.createElement("p");
+	        newMessage.textContent = message;
+	        
+	        // 자이 보낸 메시지인 경우 클래스 추가
+	        if (type === "SEND") {
+	            newMessage.classList.add("sent");
+	        }
+	        
+	        // chatLog에 메시지 추가
+	        chatLog.appendChild(newMessage);
+	        
+	        // 스크롤을 가장 아래로 이동
+	        chatLog.scrollTop = chatLog.scrollHeight;
+		}
+	}
+</script>
+</head>
+<body>
+	<div class="container">
+		<div class="participants-section" id="participants"><h1>참여자 목록</h1></div>
+		<div class="chat-section">
+			<h1>대화방</h1>
+			<div id="chatLog"></div>
+			<textarea id="textarea" placeholder="채팅을 입력해주세요"></textarea>
+			<input type="button" value="전송" id="btn_send">
+		</div>
+
+	</div>
+</body>
+</html>
